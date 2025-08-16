@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Locação de Itens</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #1a237e;
+    }
+
+    .product-list, .cart {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .product, .cart-item {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      background: #1a237e;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.remove {
+      background: #c62828;
+    }
+
+    input[type="number"], input[type="text"], input[type="date"] {
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      margin-top: 4px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .total {
+      font-weight: bold;
+      text-align: right;
+      margin-top: 10px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .form-section {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    @media(max-width: 600px) {
+      .product, .cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Monte seu Pedido</h1>
+
+  <div class="product-list" id="productList"></div>
+
+  <h2>Carrinho</h2>
+  <div class="cart" id="cart"></div>
+  <div class="total" id="total">Total: R$ 0,00</div>
+
+  <h2>Seus Dados</h2>
+  <div class="form-section">
+    <div class="form-group">
+      <label for="nome">Seu nome</label>
+      <input type="text" id="nome" placeholder="Digite seu nome completo">
+    </div>
+    <div class="form-group">
+      <label for="data">Data do evento</label>
+      <input type="date" id="data">
+    </div>
+    <div class="form-group">
+      <label for="endereco">Endereço do evento</label>
+      <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade">
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <button onclick="finalizarPedido()">Finalizar Pedido via WhatsApp</button>
+  </div>
+
+  <script>
+    const produtos = [
+      { nome: "Mesas 4 lugares", descricao: "Mesas para 4 pessoas", preco: 12 },
+      { nome: "Mesas 6 lugares", descricao: "Mesas para 6 pessoas", preco: 20 },
+      { nome: "Toalhas 1.5m", descricao: "Toalhas de 1.5 metros", preco: 7 },
+      { nome: "Toalhas 3m", descricao: "Toalhas de 3 metros", preco: 12 },
+      { nome: "Cama Elástica", descricao: "Cama elástica 3,05m", preco: 150 },
+      { nome: "Piscina de bolinhas", descricao: "Piscina 2.5m com bolinhas", preco: 150 }
+    ];
+
+    const carrinho = [];
+
+    function atualizarCarrinho() {
+      const cartEl = document.getElementById("cart");
+      cartEl.innerHTML = "";
+      let total = 0;
+
+      carrinho.forEach((item, index) => {
+        total += item.preco * item.quantidade;
+        const el = document.createElement("div");
+        el.className = "cart-item";
+        el.innerHTML = `
+          <div>
+            <strong>${item.nome}</strong><br>Qtd: 
+            <input type="number" min="1" value="${item.quantidade}" onchange="atualizarQuantidade(${index}, this.value)">
+          </div>
+          <div>
+            R$ ${(item.preco * item.quantidade).toFixed(2)} 
+            <button class="remove" onclick="removerItem(${index})">Remover</button>
+          </div>
+        `;
+        cartEl.appendChild(el);
+      });
+
+      document.getElementById("total").innerText = "Total: R$ " + total.toFixed(2);
+    }
+
+    function adicionarProduto(index) {
+      const produto = produtos[index];
+      const existente = carrinho.find(item => item.nome === produto.nome);
+      if (existente) {
+        existente.quantidade += 1;
+      } else {
+        carrinho.push({ ...produto, quantidade: 1 });
+      }
+      atualizarCarrinho();
+    }
+
+    function removerItem(index) {
+      carrinho.splice(index, 1);
+      atualizarCarrinho();
+    }
+
+    function atualizarQuantidade(index, valor) {
+      const qtd = parseInt(valor);
+      if (qtd > 0) {
+        carrinho[index].quantidade = qtd;
+        atualizarCarrinho();
+      }
+    }
+
+    function finalizarPedido() {
+      const nome = document.getElementById("nome").value.trim();
+      const data = document.getElementById("data").value;
+      const endereco = document.getElementById("endereco").value.trim();
+
+      if (!nome || !data || !endereco) {
+        alert("Por favor, preencha todos os campos.");
+        return;
+      }
+
+      if (carrinho.length === 0) {
+        alert("Carrinho vazio!");
+        return;
+      }
+
+      let mensagem = `Olá! Gostaria de fazer um pedido:%0A%0A`;
+      mensagem += `🧑 Nome: ${nome}%0A📅 Data do evento: ${data}%0A📍 Endereço: ${endereco}%0A%0A📦 Itens:%0A`;
+
+      carrinho.forEach(item => {
+        mensagem += `• ${item.nome} - Qtd: ${item.quantidade} - R$ ${(item.preco * item.quantidade).toFixed(2)}%0A`;
+      });
+
+      const total = carrinho.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
+      mensagem += `%0A💰 Total: R$ ${total.toFixed(2)}`;
+
+      const telefone = "5561998084480"; // Número de WhatsApp com DDI e DDD
+      window.open(`https://wa.me/${telefone}?text=${mensagem}`, "_blank");
+    }
+
+    function carregarProdutos() {
+      const list = document.getElementById("productList");
+      produtos.forEach((produto, index) => {
+        const el = document.createElement("div");
+        el.className = "product";
+        el.innerHTML = `
+          <div>
+            <strong>${produto.nome}</strong><br>
+            ${produto.descricao}<br>
+            <strong>R$ ${produto.preco.toFixed(2)}</strong>
+          </div>
+          <button onclick="adicionarProduto(${index})">Adicionar</button>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    carregarProdutos();
+  </script>
+
+</body>
+</html>
